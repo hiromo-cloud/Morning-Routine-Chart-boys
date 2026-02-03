@@ -127,9 +127,15 @@ const App = () => {
         <div className="bg-slate-800 p-8 rounded-[2rem] border-4 border-blue-600 shadow-2xl max-w-sm w-full text-center">
           <YushaCharacter size={120} className="mx-auto mb-6" />
           <h1 className="text-2xl font-black text-yellow-400 mb-6 uppercase tracking-widest">勇者の登録</h1>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <input required type="text" value={inputName} onChange={(e) => setInputName(e.target.value)} className="w-full p-4 bg-slate-700 border-2 border-slate-600 rounded-xl text-white outline-none" placeholder="なまえ"/>
-            <input required type="date" value={inputBirthday} onChange={(e) => setInputBirthday(e.target.value)} className="w-full p-4 bg-slate-700 border-2 border-slate-600 rounded-xl text-white outline-none"/>
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">なまえ</label>
+              <input required type="text" value={inputName} onChange={(e) => setInputName(e.target.value)} className="w-full p-4 bg-slate-700 border-2 border-slate-600 rounded-xl text-white outline-none" placeholder="たろう"/>
+            </div>
+            <div>
+              <label className="text-xs text-slate-400 block mb-1">たんじょうび</label>
+              <input required type="date" value={inputBirthday} onChange={(e) => setInputBirthday(e.target.value)} className="w-full p-4 bg-slate-700 border-2 border-slate-600 rounded-xl text-white outline-none"/>
+            </div>
             <button type="submit" className="w-full py-4 bg-blue-600 text-white rounded-xl font-black text-xl border-b-4 border-blue-800">冒険をはじめる！</button>
           </form>
         </div>
@@ -148,7 +154,7 @@ const App = () => {
               <span className="text-[10px] font-bold text-blue-300 block mb-1">いまのじかん</span>
               <div className="text-2xl font-mono font-black">{formatTime(currentTime)}</div>
             </div>
-            <div className="bg-gradient-to-br from-yellow-500 to-amber-600 p-3 rounded-xl text-slate-900 text-center shadow-lg">
+            <div className="bg-gradient-to-br from-yellow-500 to-amber-600 p-3 rounded-xl text-slate-900 text-center">
               <span className="text-[10px] font-black block mb-1 text-yellow-900">ポイント</span>
               <div className="text-2xl font-black text-white">{totalPoints}</div>
               <div className="text-[10px] font-black bg-slate-900/80 text-yellow-400 px-2 py-0.5 rounded-full mt-1">{getRank()}</div>
@@ -167,4 +173,46 @@ const App = () => {
             {tasks.map((task) => (
               <div key={task.id} onClick={() => toggleTask(task.id)} className={`flex items-center p-4 rounded-xl border-2 ${task.completed ? 'bg-slate-700/50 border-slate-600 opacity-60' : 'bg-slate-700 border-slate-600'}`}>
                 <div className="mr-4 w-12 h-12 rounded-lg bg-slate-600 flex items-center justify-center">
-                  {task.icon ||
+                  {task.icon || <Zap className="text-yellow-400" size={24} />}
+                </div>
+                <div className="flex-1">
+                  <h3 className={`text-lg font-black ${task.completed ? 'line-through' : ''}`}>{task.label}</h3>
+                  <span className="text-xs font-bold text-yellow-500">+{task.points} EXP</span>
+                </div>
+                {task.completed && <Star className="text-yellow-500" fill="currentColor" />}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="p-6 bg-slate-900 border-t-4 border-slate-700">
+          <button 
+            onClick={() => {
+              if(allCompleted) {
+                setTotalPoints(prev => prev + tasks.reduce((sum, t) => sum + t.points, 0));
+                setTasks(tasks.map(t => ({...t, completed: false})));
+                alert("ミッション完了！ポイントをゲットしたぞ！");
+              }
+            }}
+            disabled={!allCompleted}
+            className={`w-full py-6 rounded-2xl text-2xl font-black ${allCompleted ? 'bg-yellow-500 text-slate-900 border-b-4 border-amber-700' : 'bg-slate-700 text-slate-500'}`}
+          >
+            {allCompleted ? 'クエスト完了！' : 'ミッションをこなせ！'}
+          </button>
+        </div>
+      </div>
+      {isSettingsOpen && (
+        <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 p-8 rounded-3xl w-full max-w-sm border-4 border-slate-600">
+            <h2 className="text-xl font-black mb-6 flex items-center gap-2 text-white"><Settings /> 設定</h2>
+            <button onClick={handleLogout} className="w-full py-4 bg-slate-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 mb-4 border-2 border-slate-600">
+              <UserCircle size={20} /> 別の勇者でログイン
+            </button>
+            <button onClick={() => setIsSettingsOpen(false)} className="w-full py-4 bg-blue-600 text-white rounded-xl font-black">とじる</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;

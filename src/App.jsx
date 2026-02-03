@@ -156,3 +156,4 @@ const App = () => {
     target.setHours(h, m, 0, 0);
     const diff = target.getTime() - currentTime.getTime();
     return Math.max(0, Math.floor(diff / 6000
+export default App;

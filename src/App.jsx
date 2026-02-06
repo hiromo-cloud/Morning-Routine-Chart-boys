@@ -118,35 +118,4 @@ export default function App() {
         { id: 2, label: 'きがえ', duration: 5, points: 20, completed: false, icon: '👕' },
         { id: 3, label: 'はみがき', duration: 5, points: 15, completed: false, icon: '🪥' },
         { id: 4, label: 'かおをあらう', duration: 3, points: 5, completed: false, icon: '🫧' },
-        { id: 5, label: 'もちものチェック', duration: 5, points: 30, completed: false, icon: '🎒' }
-      ];
-
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        setProfile({ name: currentUser.name, birthday: currentUser.birthday, points: parsed.points || 0, departureTime: parsed.departureTime || '08:00' });
-        setTasks(parsed.tasks || defaultTasks);
-      } else {
-        setProfile({ ...currentUser, points: 0, departureTime: '08:00' });
-        setTasks(defaultTasks);
-      }
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    let interval = null;
-    if (activeTaskId !== null && taskSecondsLeft > 0) {
-      interval = setInterval(() => setTaskSecondsLeft(prev => prev - 1), 1000);
-    } else if (taskSecondsLeft === 0 && activeTaskId !== null) {
-      setActiveTaskId(null);
-    }
-    return () => clearInterval(interval);
-  }, [activeTaskId, taskSecondsLeft]);
-
-  const timeUntilDeparture = useMemo(() => {
-    const [h, m] = (profile.departureTime || '08:00').split(':').map(Number);
-    const target = new Date();
+        { id: 5, label: 'もちものチェック', duration: 5,

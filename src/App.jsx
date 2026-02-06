@@ -165,4 +165,189 @@ export default function App() {
     const updatedTasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
     setTasks(updatedTasks);
     saveData(profile, updatedTasks);
-    if (updatedTasks.find(t => t.id === id).completed
+    if (updatedTasks.find(t => t.id === id).completed) {
+      setHeroState('success');
+      setTimeout(() => setHeroState('idle'), 1000);
+    }
+  };
+
+  const updateTaskDuration = (id, newDuration) => {
+    const val = Math.max(1, parseInt(newDuration, 10) || 1);
+    const updatedTasks = tasks.map(t => t.id === id ? { ...t, duration: val } : t);
+    setTasks(updatedTasks);
+    saveData(profile, updatedTasks);
+  };
+
+  const addTask = () => {
+    if (!newTaskLabel.trim()) return;
+    const newTask = { id: Date.now(), label: newTaskLabel, duration: 5, points: 10, completed: false, icon: '✨' };
+    const updatedTasks = [...tasks, newTask];
+    setTasks(updatedTasks);
+    saveData(profile, updatedTasks);
+    setNewTaskLabel('');
+  };
+
+  const removeTask = (id) => {
+    const updatedTasks = tasks.filter(t => t.id !== id);
+    setTasks(updatedTasks);
+    saveData(profile, updatedTasks);
+  };
+
+  const startTask = (task, e) => {
+    e.stopPropagation();
+    if (activeTaskId === task.id) {
+      setActiveTaskId(null);
+    } else {
+      setActiveTaskId(task.id);
+      setTaskSecondsLeft(task.duration * 60);
+    }
+  };
+
+  const completeQuest = () => {
+    const earned = tasks.reduce((sum, t) => sum + (t.completed ? t.points : 0), 0);
+    const newProfile = { ...profile, points: profile.points + earned };
+    const resetTasks = tasks.map(t => ({ ...t, completed: false }));
+    setProfile(newProfile);
+    setTasks(resetTasks);
+    saveData(newProfile, resetTasks);
+    setIsResultOpen(true);
+  };
+
+  // --- 描画 ---
+  if (!currentUser) {
+    return (
+      <div className="h-screen bg-slate-950 flex items-center justify-center p-6 text-white font-sans">
+        <div className="bg-slate-900 p-8 rounded-[2.5rem] border-4 border-blue-600 shadow-2xl w-full max-w-sm text-center">
+          <HeroCharacter size={100} className="mx-auto mb-6" />
+          <h1 className="text-2xl font-black mb-6 text-blue-400">勇者の登録</h1>
+          <div className="space-y-4">
+            <input type="text" value={loginData.name} onChange={e => setLoginData({...loginData, name: e.target.value})} className="w-full p-4 bg-slate-800 border-2 border-slate-700 rounded-2xl outline-none" placeholder="なまえ" />
+            <input type="date" value={loginData.birthday} onChange={e => setLoginData({...loginData, birthday: e.target.value})} className="w-full p-4 bg-slate-800 border-2 border-slate-700 rounded-2xl outline-none" />
+            <button onClick={() => loginData.name && (setCurrentUser(loginData), localStorage.setItem('morning_hero_session', JSON.stringify(loginData)))} className="w-full py-4 bg-blue-600 rounded-2xl font-black text-xl shadow-lg border-b-4 border-blue-800">冒険をはじめる！</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-screen bg-slate-900 text-slate-100 flex flex-col items-center overflow-hidden font-sans">
+      <div className="w-full max-w-lg h-full bg-slate-950 flex flex-col shadow-2xl relative border-x border-slate-800">
+        
+        {/* Header */}
+        <header className="px-5 py-4 shrink-0 bg-gradient-to-b from-blue-900/20 to-transparent border-b border-slate-800/50 flex justify-between">
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2">
+              <button onClick={() => setIsSettingsOpen(true)} className="p-2 bg-slate-800 rounded-xl border border-slate-700"><Settings size={18} /></button>
+              <div className="px-3 py-1 bg-blue-600/20 border border-blue-500/30 rounded-full text-xs font-black">{profile.name}</div>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-black">
+              <span className="text-yellow-400 flex items-center gap-0.5"><Coins size={12}/>{profile.points}</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-[10px] font-black text-slate-500">TIME</div>
+            <div className="text-xl font-mono font-black">{currentTime.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</div>
+          </div>
+        </header>
+
+        {/* Departure Banner */}
+        <div className="px-5 pt-3 pb-2 shrink-0">
+          <div className={`h-20 rounded-[1.5rem] border-2 flex items-center justify-between px-6 shadow-lg transition-all ${timeUntilDeparture <= 5 ? 'bg-red-600 border-red-400 animate-pulse' : 'bg-blue-600 border-blue-400'}`}>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black text-white/70">出発まで残り</span>
+              <div className="text-4xl font-mono font-black">{timeUntilDeparture}<span className="text-xl ml-1">min</span></div>
+            </div>
+            <HeroCharacter size={60} state={heroState} />
+          </div>
+        </div>
+
+        {/* Task Area */}
+        <div className="flex-1 overflow-y-auto px-4 py-2">
+          <div className="space-y-2.5 pb-6">
+            {tasks.map((task) => {
+              const isActive = activeTaskId === task.id;
+              return (
+                <div key={task.id} onClick={() => toggleTask(task.id)} className={`flex items-center p-3.5 rounded-2xl border-2 transition-all cursor-pointer ${task.completed ? 'bg-slate-900 border-slate-900 opacity-40' : isActive ? 'bg-blue-900/30 border-yellow-500 scale-[1.01]' : 'bg-slate-800/40 border-slate-800'}`}>
+                  <div className="mr-4 shrink-0">
+                    {isActive ? <CircleTimer secondsLeft={taskSecondsLeft} totalSeconds={task.duration * 60} /> : <div className="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center text-xl shadow-inner">{task.icon}</div>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className={`text-base font-black truncate ${task.completed ? 'line-through text-slate-600' : ''}`}>{task.label}</h3>
+                    <div className="flex items-center gap-2">
+                      {isActive ? <span className="text-sm font-mono font-black text-yellow-500">{Math.floor(taskSecondsLeft/60)}:{(taskSecondsLeft%60).toString().padStart(2,'0')}</span> : <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1"><Clock size={10} /> {task.duration}分</span>}
+                      <span className="text-[10px] font-bold text-yellow-600 flex items-center gap-0.5"><Coins size={10} /> +{task.points}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    {!task.completed && <button onClick={(e) => startTask(task, e)} className={`w-10 h-10 rounded-xl flex items-center justify-center ${isActive ? 'bg-red-500 text-white' : 'bg-slate-700 text-slate-300'}`}>{isActive ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}</button>}
+                    <div className={`w-9 h-9 rounded-full border-2 flex items-center justify-center ${task.completed ? 'bg-yellow-500 border-yellow-300 text-slate-950' : 'border-slate-800'}`}>{task.completed && <CheckCircle2 size={20} />}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 shrink-0 bg-slate-950 border-t border-slate-900">
+          <button disabled={!allCompleted} onClick={completeQuest} className={`w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 ${allCompleted ? 'bg-yellow-500 text-slate-950 border-b-4 border-yellow-700 shadow-lg' : 'bg-slate-800 text-slate-600 opacity-50'}`}>
+            {allCompleted ? <><Trophy size={20} /> クエスト完了！</> : 'ミッション継続中...'}
+          </button>
+        </div>
+
+        {/* 設定画面 */}
+        <Modal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} title="冒険の設定">
+          <div className="space-y-6 pb-4">
+            <div className="space-y-3">
+              <label className="text-xs font-black text-slate-400">出発の時間</label>
+              <input type="time" value={profile.departureTime} onChange={(e) => {
+                const p = { ...profile, departureTime: e.target.value };
+                setProfile(p); saveData(p, tasks);
+              }} className="w-full p-4 bg-slate-900 border-2 border-slate-700 rounded-2xl text-3xl font-mono font-black text-yellow-400 text-center" />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-xs font-black text-slate-400">ミッションの編集・追加</label>
+              <div className="space-y-2">
+                {tasks.map(task => (
+                  <div key={task.id} className="bg-slate-900 p-3 rounded-xl border border-slate-700 flex items-center gap-3">
+                    <span className="text-lg shrink-0">{task.icon}</span>
+                    <span className="flex-1 text-xs font-bold text-slate-300 truncate">{task.label}</span>
+                    <div className="flex items-center gap-2">
+                      <input 
+                        type="number" 
+                        value={task.duration} 
+                        onChange={(e) => updateTaskDuration(task.id, e.target.value)}
+                        className="w-12 p-1 bg-slate-800 border border-slate-700 rounded-lg text-center font-black text-white text-xs" 
+                      />
+                      <span className="text-[10px] font-bold text-slate-500">分</span>
+                      <button onClick={() => removeTask(task.id)} className="text-red-400"><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input type="text" value={newTaskLabel} onChange={(e) => setNewTaskLabel(e.target.value)} placeholder="新しいミッション" className="flex-1 p-3 bg-slate-900 border border-slate-700 rounded-xl text-sm" />
+                <button onClick={addTask} className="p-3 bg-blue-600 text-white rounded-xl"><Plus size={20} /></button>
+              </div>
+            </div>
+            
+            <button onClick={() => {setCurrentUser(null); localStorage.removeItem('morning_hero_session');}} className="w-full py-3 bg-slate-900 text-slate-500 rounded-xl text-sm font-bold flex items-center justify-center gap-2">
+              <LogOut size={16} /> 別の勇者でログイン
+            </button>
+          </div>
+        </Modal>
+
+        {/* 結果画面 */}
+        <Modal isOpen={isResultOpen} onClose={() => setIsResultOpen(false)} title="クエストクリア！">
+          <div className="text-center space-y-5">
+            <HeroCharacter size={120} state="success" className="mx-auto" />
+            <h3 className="text-2xl font-black text-yellow-400 uppercase">GREAT JOB!</h3>
+            <button onClick={() => setIsResultOpen(false)} className="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg">行ってきます！</button>
+          </div>
+        </Modal>
+      </div>
+    </div>
+  );
+}
